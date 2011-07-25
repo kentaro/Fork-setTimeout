@@ -28,7 +28,7 @@ sub setTimeout (&$) {
 
     # child
     elsif ($pid == 0) {
-        usleep $time;
+        usleep $time * 1000;
         eval { $sub->() };
         die $@ if $@;
         exit 0;
@@ -46,10 +46,10 @@ sub clearTimeout ($) {
 }
 
 sub new {
-    my ($class, $pid) = @_;
+    my ($class, $args) = @_;
     bless {
-        pid        => $pid,
         parent_pid => $$,
+        %{$args || {}},
     }, $class;
 }
 

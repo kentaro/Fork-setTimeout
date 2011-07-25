@@ -1,14 +1,35 @@
 # NAME
 
-Fork::setTimeout -
+Fork::setTimeout - Implementation of setTimeout() function in
+JavaScript
 
 # SYNOPSIS
 
   use Fork::setTimeout;
 
+  my $timer = setTimeout(sub { ... }, 10);
+  clearTimeout($timer);
+
 # DESCRIPTION
 
-Fork::setTimeout is
+An emulation of setTimeout() funcion in JavaScript using fork(2).
+
+# METHODS
+
+## setTimeout( I<$code>, I<$msec> )
+
+  my $timer = setTimeout(sub { ... }, 10);
+
+Dispatches `$code` after `$msec` micro seconds.
+
+You should store the return value, `$timer`, in some lexical variable
+to wait for child process to finish dispatching `$code`.
+
+## clearTimeout( I<$timer> )
+
+  clearTimeout($timer);
+
+Kills the child process and clear `$timer` out.
 
 # AUTHOR
 

@@ -13,23 +13,37 @@ our @EXPORT = qw(
 );
 
 use Config;
-use POSIX;
+use POSIX ':sys_wait_h';
 my $TERMSIG = $^O eq 'MSWin32' ? 'KILL' : 'TERM';
+my $is_child = 0;
+
+my $subs = {};
+sub sigchld {
+    while ((my $pid = waitpid(-1, WNOHANG)) > 0) {
+        if ( my $sub = delete $subs->{$pid} ) {
+            $sub->();
+        }
+    }
+}
 
 sub setTimeout (&$) {
     my ($sub, $time) = @_;
     my $self = __PACKAGE__->new;
 
+
     # parent
     if (my $pid = fork()) {
+        $subs->{$pid} = $sub;
+        $SIG{CHLD} = \&sigchld;
         $self->pid($pid);
         return $self;
     }
 
     # child
     elsif ($pid == 0) {
+        $SIG{CHLD} = 'DEFAULT';
+        $is_child = 1;
         usleep $time * 1000;
-        eval { $sub->() };
         die $@ if $@;
         exit 0;
     }
@@ -41,6 +55,7 @@ sub setTimeout (&$) {
 
 sub clearTimeout ($) {
     my ($self) = @_;
+    delete $subs->{$self->pid};
     kill $TERMSIG, $self->pid;
     $self->pid(undef);
 }
@@ -62,9 +77,12 @@ sub pid {
 sub DESTROY {
     my $self = shift;
 
-    if (defined $self->pid) {
+    if (!$is_child && defined $self->pid) {
         local $?;
         while (waitpid($self->pid, 0) == 0) {}
+        if ( my $sub = delete $subs->{$self->pid} ) {
+            $sub->();
+        }
         $self->pid(undef);
     }
 }

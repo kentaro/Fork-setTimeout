@@ -1,7 +1,21 @@
 use strict;
 use warnings;
-use Test::More tests => 6;
+use Test::More tests => 7;
 use Fork::setTimeout;
+
+{
+    my $i = 0;
+
+    my $timer = setTimeout(sub { $i++ }, 2000);
+    my $timer2 = setTimeout(sub { $i++ }, 1000);
+    my $timer3 = setTimeout(sub { $i=100 }, 1000);
+    clearTimeout($timer3);
+    for ( 1..4 ) {
+        sleep 1;
+    }
+
+    is $i => 2;
+}
 
 my $timer1 = setTimeout(
     sub {

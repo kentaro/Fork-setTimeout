@@ -118,7 +118,7 @@ An emulation of setTimeout() funcion in JavaScript using fork(2).
 
   my $timer = setTimeout(sub { ... }, 10);
 
-Dispatches C<$code> after C<$msec> micro seconds.
+Dispatches C<$code> after C<$msec> milli seconds.
 
 You should store the return value, C<$timer>, in some lexical variable
 to wait for child process to finish dispatching C<$code>.

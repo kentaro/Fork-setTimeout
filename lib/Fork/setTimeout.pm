@@ -15,7 +15,6 @@ our @EXPORT = qw(
 use Config;
 use POSIX ':sys_wait_h';
 my $TERMSIG = $^O eq 'MSWin32' ? 'KILL' : 'TERM';
-my $is_child = 0;
 
 my $subs = {};
 sub sigchld {
@@ -42,9 +41,7 @@ sub setTimeout (&$) {
     # child
     elsif ($pid == 0) {
         $SIG{CHLD} = 'DEFAULT';
-        $is_child = 1;
         usleep $time * 1000;
-        die $@ if $@;
         exit 0;
     }
 
@@ -74,15 +71,21 @@ sub pid {
     $self->{pid};
 }
 
+sub is_parent {  defined shift->pid }
+sub is_child  { !defined shift->pid }
+
 sub DESTROY {
     my $self = shift;
 
-    if (!$is_child && defined $self->pid) {
+    if (!$self->is_child && defined $self->pid) {
         local $?;
+
         while (waitpid($self->pid, 0) == 0) {}
+
         if ( my $sub = delete $subs->{$self->pid} ) {
             $sub->();
         }
+
         $self->pid(undef);
     }
 }

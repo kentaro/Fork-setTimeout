@@ -1,59 +1,50 @@
 use strict;
 use warnings;
-use Test::More tests => 7;
+
+use Test::More;
+use Test::Fatal;
+use Test::Name::FromLine;
+
 use Fork::setTimeout;
 
-{
-    my $i = 0;
-
-    my $timer = setTimeout(sub { $i++ }, 2000);
-    my $timer2 = setTimeout(sub { $i++ }, 1000);
-    my $timer3 = setTimeout(sub { $i=100 }, 1000);
-    clearTimeout($timer3);
-    for ( 1..4 ) {
-        sleep 1;
-    }
-
-    is $i => 2;
-}
-
-my $timer1 = setTimeout(
-    sub {
-        pass "timer1";
-    }, 10);
-
-{
+subtest 'setTimeout()' => sub {
+    my $timer1 = setTimeout(sub { pass 'timer1' }, 10);
     my $timer2 = setTimeout(
         sub {
-            fail "cleared";
-        }, 10);
+            pass 'timer2';
+            my $timer3 = setTimeout(
+                sub {
+                    pass 'timer3';
+                    my $timer4 = setTimeout(
+                        sub {
+                            pass 'timer4';
+                        }, 1000);
+                }, 1000);
+        }, 1000);
+};
 
-    clearTimeout($timer2);
-}
+subtest 'clearTimeout()' => sub {
+    my $i = 0;
 
-my $timer3 = setTimeout(
-    sub {
-        pass "timer3";
-    }, 10);
+    my $timer1 = setTimeout(
+        sub {
+            $i++;
 
-my $timer4 = setTimeout(
-    sub {
-        die "foo";
-    }, 10);
+            my $timer2 = setTimeout(
+                sub {
+                    fail 'cleared';
+                }, 1000);
+            clearTimeout($timer2);
 
-my $nest1 = setTimeout(
-    sub {
-        pass "nest1";
-        my $nest2 = setTimeout(
-            sub {
-                pass "nest2";
-                my $nest3 = setTimeout(
-                    sub {
-                        pass "nest3";
-                        my $nest4 = setTimeout(
-                            sub {
-                                pass "nest4";
-                            }, 10);
-                    }, 10);
-            }, 10);
-    }, 10);
+            is $i => 1;
+          }, 1000);
+};
+
+subtest 'closure' => sub {
+    my $i = 0;
+
+    my $timer1 = setTimeout(sub { $i++; is $i => 1 }, 1000);
+    my $timer2 = setTimeout(sub { $i++; is $i => 2 }, 2000);
+};
+
+done_testing;
